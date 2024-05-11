@@ -17,6 +17,6 @@ Comprehensive software package designed for streamlining the entire process ECL 
 - Install required libraries and packages
 - `pip install -r requirements.txt`
 - Run the app
-- `python main.py`
-- **Enjoy!*** 
+- `python src/main.py`
+
 
