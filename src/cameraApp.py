@@ -11,9 +11,7 @@ from picamera2.outputs import FileOutput
 from picamera2.previews.qt import QGlPicamera2
 import cv2
 import numpy as np
-from sys import platform
-import subprocess
-import os
+from util import open_window
 
 
 class CameraApp(QWidget):
@@ -102,16 +100,13 @@ class CameraApp(QWidget):
         if ret:
             res = self.single_frame(frame)
             self.frames.append(res.astype(np.uint8))
-              # Process events to update the GUI
             self.result_label.setText("Processing....")
-            cv2.waitKey(20)
         else:
             self.frames = np.array(self.frames).astype(np.uint8)
             max_frame = np.max(self.frames, axis=0)
             self.max_intensity = np.round(np.mean(max_frame), 2)
             cv2.imwrite("image.jpg", max_frame)
             self.cap.release()
-            cv2.destroyAllWindows()
             self.result_timer.stop()
             self.result_label.setText(f"Intensity is {self.max_intensity} RLU")
 
@@ -122,12 +117,6 @@ class CameraApp(QWidget):
         mask = cv2.inRange(hsv, light_blue, dark_blue)
         res = cv2.bitwise_and(frame, frame, mask=mask)
         return res
-
-def open_window(path):
-    if any([platform.startswith(system) for system in ["os","darwin","linux"]]):
-        subprocess.call(["open", path])
-    elif "win" in platform:
-        os.startfile(path)
 
 if __name__ == "__main__":
     app = QApplication([])

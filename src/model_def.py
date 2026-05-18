@@ -6,18 +6,18 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.svm import SVR
 
 class DataAxis:
-    axes = []
-    def __init__(self, label, original, test, train):
+    def __init__(self, label="", original=None, test=None, train=None):
         self.label = label
-        self.original = original
-        self.test = test
-        self.train = train
-        DataAxis.axes.append(self)
+        self.original = original if original is not None else []
+        self.test = test if test is not None else []
+        self.train = train if train is not None else []
 
-global x
-x = DataAxis("",[],[],[])
-global y
-y = DataAxis("",[],[],[])
+    def reset(self):
+        self.label = ""
+        self.original = []
+        self.test = []
+        self.train = []
+
 
 class ML_Model:
     models = []

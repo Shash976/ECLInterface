@@ -2,9 +2,10 @@ import sys
 import cv2
 import numpy as np
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                             QLabel, QSlider, QFileDialog, QRadioButton, QLineEdit)
+                             QLabel, QSlider, QFileDialog, QRadioButton, QLineEdit, QComboBox)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage, QIntValidator
+from model_def import Reagent
 
 class ImageMaskApp(QWidget):
     def __init__(self):
@@ -73,6 +74,19 @@ class ImageMaskApp(QWidget):
             row_layout.addWidget(input_field)
             slider_layout.addLayout(row_layout)
         main_layout.addLayout(slider_layout)
+
+        # Wire calibration results back to the analysis pipeline
+        apply_layout = QHBoxLayout()
+        apply_label = QLabel("Apply HSV range to reagent:")
+        self.reagent_combo = QComboBox()
+        self.reagent_combo.addItems([r.name for r in Reagent.reagents])
+        self.apply_btn = QPushButton("Apply to Reagent")
+        self.apply_btn.clicked.connect(self.applyToReagent)
+        apply_layout.addWidget(apply_label)
+        apply_layout.addWidget(self.reagent_combo)
+        apply_layout.addWidget(self.apply_btn)
+        main_layout.addLayout(apply_layout)
+
         self.setLayout(main_layout)
         self.setWindowTitle('Color Space Masking')
         self.setGeometry(300, 300, 900, 600)
@@ -87,7 +101,10 @@ class ImageMaskApp(QWidget):
 
     def displayImage(self, image, label):
         if image is not None:
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            if len(image.shape) == 2:
+                image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+            else:
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             height, width, channel = image.shape
             bytesPerLine = 3 * width
             qImg = QImage(image.data, width, height, bytesPerLine, QImage.Format_RGB888)
@@ -133,6 +150,19 @@ class ImageMaskApp(QWidget):
     def onInputChanged(self, value, slider):
         if value:
             slider.setValue(int(value))
+
+    def applyToReagent(self):
+        if self.color_space != 'HSV':
+            self.resultMeanLabel.setText('Switch to HSV mode to apply hue range to a reagent')
+            return
+        reagent = Reagent.get_reagent(self.reagent_combo.currentText())
+        if reagent is None:
+            return
+        reagent.min_hue = self.sliders[0].value()
+        reagent.max_hue = self.sliders[3].value()
+        self.resultMeanLabel.setText(
+            f'Applied: {reagent.name} hue range [{reagent.min_hue}, {reagent.max_hue}]'
+        )
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
